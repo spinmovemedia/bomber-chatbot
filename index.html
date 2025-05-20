@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bomber Chat</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; background: #F4F4F3; }
+    #chat { max-width: 400px; margin: 0 auto; height: 60vh; overflow-y: auto;
+      border: 1px solid #DDD; border-radius: 8px; background: #FFF; padding: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .bubble { padding: 8px 12px; border-radius: 12px; margin: 8px 0; max-width: 80%; line-height:1.4; }
+    .user {
+      background: #D4A808; color: #000; margin-left: auto;
+      border-radius: 12px 12px 0 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .bot {
+      background: #ECECEC; color: #333;
+      border-radius: 12px 12px 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    #inputBar {
+      display: flex; max-width: 400px; margin: 1rem auto 0;
+      border: 1px solid #DDD; border-radius: 24px; overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    #msg { flex:1; border:none; padding:0.75rem 1rem; font-size:1rem; }
+    #msg:focus { outline:none; }
+    #send {
+      background:#2B2B2B; color:#FFF; border:none; padding:0 1.5rem;
+      font-weight:bold; cursor:pointer;
+    }
+    #send:hover { background:#000; }
+  </style>
+</head>
+<body>
+  <div id="chat"></div>
+  <div id="inputBar">
+    <input id="msg" placeholder="Type a message…" />
+    <button id="send">Send</button>
+  </div>
+  <script>
+    const chatEl = document.getElementById('chat');
+    const inputEl = document.getElementById('msg');
+    const sendBtn = document.getElementById('send');
+    function bubble(text, cls) {
+      const d = document.createElement('div');
+      d.className = 'bubble ' + cls;
+      d.textContent = text;
+      chatEl.appendChild(d);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+    async function send() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+      bubble(text, 'user');
+      inputEl.value = '';
+      bubble('…', 'bot');
+      let respText = '';
+      const lower = text.toLowerCase();
+      if (lower.includes('order') && (/@/.test(text) || /\d{5,}/.test(text))) {
+        const idMatch = text.match(/\d{5,}/) || text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+        const id = idMatch ? idMatch[0] : text;
+        const o = await fetch(`/order?identifier=${encodeURIComponent(id)}`).then(r => r.json());
+        respText = `Order #${o.name||'N/A'}\nStatus: ${o.financial_status||'N/A'}\nFulfillment: ${o.fulfillment_status||'N/A'}`;
+      } else if (lower.includes('breaks')) {
+        const b = await fetch('/breaks').then(r => r.json());
+        respText = Array.isArray(b)
+          ? b.map(x => `${x.name} – ${x.spots_remaining} spots`).join('\n')
+          : 'No break data found.';
+      } else {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ messages:[{ role:'user', content:text }] })
+        });
+        const bot = await res.json();
+        respText = bot.content;
+      }
+      chatEl.querySelector('.bot:last-child').textContent = respText;
+    }
+    sendBtn.onclick = send;
+    inputEl.onkeydown = e => e.key === 'Enter' && send();
+  </script>
+</body>
+</html>
+
