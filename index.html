@@ -69,7 +69,7 @@
           ? b.map(x => `${x.name} – ${x.spots_remaining} spots`).join('\n')
           : 'No break data found.';
       } else {
-        const res = await fetch('/chat', {
+        const res = await fetch('https://bomber-chatbot-rlbv-nars8i5vo-lauren-halversons-projects.vercel.app/chat', {
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
           body: JSON.stringify({ messages:[{ role:'user', content:text }] })
