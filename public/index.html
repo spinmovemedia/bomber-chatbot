@@ -141,7 +141,7 @@
           : 'No break data found.';
       }
       else {
-        const res = await fetch('/chat', {
+        const res = await fetch('https://bomber-chatbot-8tkzbf5oo-lauren-halversons-projects.vercel.app/chat', {
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
           body: JSON.stringify({ messages:[{ role:'user', content:text }] })
